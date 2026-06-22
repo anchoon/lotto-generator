@@ -3,60 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>LIVE LOTTO DRAW</title>
-
-    <link rel="stylesheet" href="./css/style.css">
-    <script src="./js/script.js" defer></script>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="description" content="실시간 로또 추첨기와 스포츠 정보를 제공하는 간단한 데모 사이트입니다.">
 </head>
-
 <body>
+    <div class="container">
+        <header class="site-hero">
+            <div class="hero-inner">
+                <div class="brand">
+                    <h1>LIVE LOTTO DRAW</h1>
+                    <p class="tag">로또 추첨 & 스포츠 정보</p>
+                </div>
+            </div>
+            <nav class="menu">
+                <a href="/">홈</a>
+                <a href="/lotto">로또</a>
+                <a href="/kbo">KBO</a>
+                <a href="/vleague">V리그</a>
+                <a href="/kleague">K리그</a>
+                <a href="/board">게시판</a>
+            </nav>
+        </header>
 
-<div class="container">
+        <main>
+            <section style="max-width:1100px; margin:28px auto; text-align:center;">
+                <h2>빠르게 번호를 뽑고 싶나요?</h2>
+                <p style="color:var(--muted); margin:8px 0 18px;">로또 탭에서 실제 추첨 애니메이션을 확인할 수 있습니다.</p>
+                <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:24px;">
+                    <a class="category-card" href="/lotto">
+                        <div class="icon">🎰</div>
+                        <div class="title">로또 생성기</div>
+                        <div class="muted">추첨 애니메이션 포함</div>
+                    </a>
+                    <a class="category-card" href="/world-cup">
+                        <div class="icon">🌍</div>
+                        <div class="title">월드컵</div>
+                        <div class="muted">토너먼트 & 일정</div>
+                    </a>
+                    <a class="category-card" href="/toto">
+                        <div class="icon">⚽</div>
+                        <div class="title">스포츠 토토</div>
+                        <div class="muted">경기 예측</div>
+                    </a>
+                </div>
 
-    <header>
-        <h1>🎥 LIVE LOTTO DRAW</h1>
-        <p>실시간 공 애니메이션 로또 시스템</p>
-    </header>
+                <p style="margin-top:12px;">또한 상단 메뉴의 <strong>KBO</strong> 링크를 통해 야구 일정(API 연동) 페이지로 이동하세요.</p>
+            </section>
+        </main>
 
-    <nav class="menu">
-        <a href="/">로또</a>
-        <a href="/world-cup">🌍 월드컵</a>
-        <a href="/kbo">KBO</a>
-        <a href="/vleague">V리그</a>
-        <a href="/kleague">K리그</a>
-        <a href="/board">게시판</a>
-    </nav>
-
-    <div class="top-controls">
-        <button onclick="startDraw()">1줄 추첨</button>
-        <button onclick="fastFive()">5줄 즉시</button>
-        <button onclick="resetDraw()">초기화</button>
+        <footer class="site-footer">
+            <div>© 2026 LIVE LOTTO DRAW</div>
+            <div class="small">학습용 데모 프로젝트</div>
+        </footer>
     </div>
-
-    <main>
-
-        <section class="machine-wrap">
-            <div class="machine">
-                <canvas id="canvas"></canvas>
-                <div id="tube"></div>
-            </div>
-        </section>
-
-        <section id="result"></section>
-
-        <section style="text-align: center; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-            <p style="color: white; margin-bottom: 15px; font-weight: 600;">🌐 더 많은 스포츠 정보를 보려면</p>
-            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                <a href="https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=%EC%9B%94%EB%93%9C%EC%BB%B5&ackey=m22o58nk" target="_blank" style="background: #00C73C; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 월드컵</a>
-                <a href="https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=kbo&ackey=9y7dupye" target="_blank" style="background: #00C73C; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 KBO</a>
-                <a href="https://sports.naver.com" target="_blank" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 스포츠</a>
-            </div>
-        </section>
-
-    </main>
-
-</div>
 
 </body>
 </html>

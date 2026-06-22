@@ -241,8 +241,9 @@
 <script>
     async function loadKBOData() {
         try {
-            const response = await fetch('/api/sports/schedule?league=kbo');
-            const games = await response.json();
+            const response = await fetch('/api/kbo');
+            const payload = await response.json();
+            const games = payload.games || [];
 
             const tbody = document.getElementById('tableBody');
             const table = document.getElementById('scheduleTable');

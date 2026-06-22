@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import random
 import logging
@@ -30,6 +31,12 @@ logging.basicConfig(level=logging.INFO)
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 POSTS_FILE = os.path.join(DATA_DIR, 'posts.json')
+VISITS_FILE = os.path.join(DATA_DIR, 'visits.json')
+SPORTS_FILE = os.path.join(DATA_DIR, 'sports.json')
+LOTTO_HISTORY_FILE = os.path.join(DATA_DIR, 'lotto_history.json')
+
+# Background updater lock
+_schedules_lock = None
 
 # 로또 상수
 LOTTO_MIN = 1
@@ -171,6 +178,29 @@ def ensure_data_files():
         save_json(USERS_FILE, {})
     if not os.path.exists(POSTS_FILE):
         save_json(POSTS_FILE, [])
+    if not os.path.exists(VISITS_FILE):
+        save_json(VISITS_FILE, {'count': 0})
+    if not os.path.exists(SPORTS_FILE):
+        # initialize with built-in mock schedules
+        save_json(SPORTS_FILE, SPORT_SCHEDULES)
+    if not os.path.exists(LOTTO_HISTORY_FILE):
+        save_json(LOTTO_HISTORY_FILE, {})
+
+
+def load_sports_cache():
+    return load_json(SPORTS_FILE, SPORT_SCHEDULES)
+
+
+def save_sports_cache(data):
+    save_json(SPORTS_FILE, data)
+
+
+def load_lotto_history():
+    return load_json(LOTTO_HISTORY_FILE, {})
+
+
+def save_lotto_history(data):
+    save_json(LOTTO_HISTORY_FILE, data)
 
 
 def load_json(path, default):
@@ -186,9 +216,154 @@ def save_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def hash_password(raw_password):
-    """비밀번호 안전하게 해싱"""
-    return hashlib.sha256(raw_password.encode('utf-8')).hexdigest()
+def simplify_kbo_game(game):
+    """Naver KBO API 게임 데이터를 프론트엔드용으로 단순화"""
+    date = game.get('gameDate') or ''
+    time = ''
+    game_date_time = game.get('gameDateTime')
+    if game_date_time and 'T' in game_date_time:
+        parts = game_date_time.split('T')
+        date = parts[0]
+        time = parts[1][:5]
+    if not time and game.get('gameTime'):
+        time = game.get('gameTime')
+
+    home = game.get('homeTeamName') or game.get('homeTeamCode', '')
+    away = game.get('awayTeamName') or game.get('awayTeamCode', '')
+    home_score = game.get('homeTeamScore')
+    away_score = game.get('awayTeamScore')
+    score = ''
+    if home_score is not None and away_score is not None:
+        score = f"{home_score} - {away_score}"
+
+    status = game.get('statusInfo') or game.get('statusCode') or ''
+    return {
+        'date': date,
+        'time': time,
+        'home': home,
+        'away': away,
+        'score': score,
+        'status': status
+    }
+
+
+def fetch_naver_kbo_games():
+    url = 'https://api-gw.sports.naver.com/schedule/games'
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json, text/javascript, */*; q=0.01'
+    }
+    params = {
+        'league': 'kbo',
+        'categoryId': 'kbo',
+        'division': 'regular'
+    }
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            games = data.get('result', {}).get('games', [])
+            if isinstance(games, list) and games:
+                return [simplify_kbo_game(game) for game in games]
+    except Exception as e:
+        app.logger.warning(f'KBO Naver API 호출 실패: {e}')
+    return None
+
+
+def parse_lotto_numbers_from_naver_search(drw_no):
+    search_url = 'https://search.naver.com/search.naver'
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+    }
+    params = {'query': f'로또 {drw_no}회 당첨번호'}
+    try:
+        resp = requests.get(search_url, headers=headers, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        text = re.sub(r'\s+', ' ', soup.get_text(separator=' ', strip=True))
+
+        # 회차 기준으로 검색 위치를 좁힌 뒤 숫자 패턴을 찾는다.
+        draw_pattern = re.compile(
+            rf'{drw_no}회.*?(\d{{1,2}}(?:[.,]\s*\d{{1,2}}){{5}})(?:\s*\+\s*(\d{{1,2}}))?',
+            re.DOTALL
+        )
+        match = draw_pattern.search(text)
+        if not match:
+            draw_pattern = re.compile(
+                rf'{drw_no}회.*?(\d{{1,2}}(?:\s+\d{{1,2}}){{5}})(?:\s*\+\s*(\d{{1,2}}))?',
+                re.DOTALL
+            )
+            match = draw_pattern.search(text)
+
+        if not match:
+            # 회차 기준이 없더라도 가장 먼저 등장하는 로또 번호 패턴을 시도
+            match = re.search(r'(\d{1,2}(?:[.,]\s*\d{1,2}){5})(?:\s*\+\s*(\d{1,2}))?', text)
+            if not match:
+                match = re.search(r'(\d{1,2}(?:\s+\d{1,2}){5})(?:\s*\+\s*(\d{1,2}))?', text)
+
+        if not match:
+            return None
+
+        raw_numbers = match.group(1).replace('\u00A0', ' ')
+        numbers = [int(n.strip()) for n in re.split(r'[\s,]+', raw_numbers) if n.strip().isdigit()]
+        bonus = None
+        if match.group(2) and match.group(2).isdigit():
+            bonus = int(match.group(2))
+
+        draw_date = None
+        date_match = re.search(r'(20\d{2}[./-]\d{1,2}[./-]\d{1,2})', text)
+        if date_match:
+            draw_date = date_match.group(1).replace('.', '-').replace('/', '-').strip()
+
+        if len(numbers) == 6:
+            return {
+                'drwNo': drw_no,
+                'drwNoDate': draw_date,
+                'numbers': numbers,
+                'bonus': bonus
+            }
+    except Exception as e:
+        app.logger.warning(f'로또 검색 파싱 실패: {e}')
+    return None
+
+
+def fetch_lotto_round(drw_no):
+    """dhlottery에서 회차별 로또 결과를 조회한다. 실패하면 None 반환."""
+    url = f'https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={drw_no}'
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Referer': 'https://www.dhlottery.co.kr/gameResult.do?method=byWin&drwNo=' + str(drw_no)
+        }
+        r = requests.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            # dhlottery는 일부 환경에서 HTML을 반환하기 때문에 안전하게 JSON 변환 시도
+            try:
+                j = r.json()
+            except ValueError:
+                j = None
+
+            if isinstance(j, dict) and j.get('returnValue') == 'success':
+                return {
+                    'drwNo': j.get('drwNo'),
+                    'drwNoDate': j.get('drwNoDate'),
+                    'numbers': [j.get(f'drwtNo{i}') for i in range(1, 7)],
+                    'bonus': j.get('bnusNo'),
+                    'totSellamnt': j.get('totSellamnt'),
+                    'firstPrzwnerCo': j.get('firstPrzwnerCo'),
+                    'firstWinamnt': j.get('firstWinamnt')
+                }
+
+        app.logger.info('dhlottery JSON 응답 실패, Naver 검색 fallback 시도')
+        return parse_lotto_numbers_from_naver_search(drw_no)
+    except Exception as e:
+        app.logger.warning(f'fetch_lotto_round 실패: {e}')
+        return parse_lotto_numbers_from_naver_search(drw_no)
 
 
 def generate_anonymous_id():
@@ -333,7 +508,39 @@ def get_ko_round():
 # [API] 특정 KBO 전용 API 단독 제공 버전 (필요시 사용)
 @app.route('/api/kbo', methods=['GET'])
 def get_kbo_data():
-    return jsonify({'games': SPORT_SCHEDULES['kbo']}), 200
+    """
+    KBO 데이터 반환. 환경변수로 `API_SPORTS_KEY`와 `API_SPORTS_KBO_URL`을 설정하면
+    해당 외부 API(예: API-Sports)에서 실시간 데이터를 가져옵니다. 설정이 없으면 캐시된 스케줄을 반환합니다.
+    """
+    # 우선 캐시된 데이터
+    cache = load_sports_cache()
+
+    api_key = os.environ.get('API_SPORTS_KEY')
+    api_url = os.environ.get('API_SPORTS_KBO_URL')
+
+    if api_key and api_url:
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json'
+        }
+        try:
+            resp = requests.get(api_url, headers=headers, timeout=8)
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                    return jsonify({'games': data}), 200
+                except Exception:
+                    app.logger.warning('KBO: 외부 응답 파싱 실패, 캐시 반환')
+            else:
+                app.logger.warning(f'KBO: 외부 API 응답 상태 {resp.status_code}, 캐시 반환')
+        except Exception as e:
+            app.logger.warning(f'KBO 외부 API 호출 실패: {e}')
+
+    naver_games = fetch_naver_kbo_games()
+    if naver_games is not None:
+        return jsonify({'games': naver_games}), 200
+
+    return jsonify({'games': cache.get('kbo', SPORT_SCHEDULES['kbo'])}), 200
 @app.route('/kbo')
 def kbo():
     return render_template('kbo.html')
@@ -498,6 +705,46 @@ def delete_post(post_id):
     return jsonify({'message': '게시물이 삭제되었습니다.'}), 200
 
 
+@app.route('/api/posts/<int:post_id>', methods=['PUT'])
+def edit_post(post_id):
+    """게시글 수정: 비밀번호 또는 로그인 사용자 확인 후 수정 가능"""
+    ensure_data_files()
+    post_list = load_json(POSTS_FILE, [])
+
+    data = request.get_json() or {}
+    title = str(data.get('title', '')).strip()
+    body = str(data.get('body', '')).strip()
+    password = str(data.get('password', '')).strip()
+
+    # 게시글 찾기
+    for idx, post in enumerate(post_list):
+        if post['id'] == post_id:
+            # 로그인 사용자와 작성자 비교 가능 (작성자에 username 저장된 경우)
+            current_user = session.get('username')
+            author = post.get('author')
+
+            # 비밀번호로 인증
+            if post.get('password_hash'):
+                if not password or post.get('password_hash') != hash_password(password):
+                    return jsonify({'error': '비밀번호가 일치하지 않습니다.'}), 401
+            else:
+                # 비밀번호가 없으면 세션 유저가 동일한지 확인
+                if not current_user or current_user != author:
+                    return jsonify({'error': '수정 권한이 없습니다.'}), 401
+
+            # 입력 검증
+            if not title or not body:
+                return jsonify({'error': '제목과 내용을 모두 입력하세요.'}), 400
+
+            post_list[idx]['title'] = title
+            post_list[idx]['body'] = body
+            post_list[idx]['date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
+            save_json(POSTS_FILE, post_list)
+            return jsonify({'message': '게시물이 수정되었습니다.', 'post': post_list[idx]}), 200
+
+    return jsonify({'error': '게시물을 찾을 수 없습니다.'}), 404
+
+
 # [API] 로또 번호 자동 생성
 @app.route('/api/lotto/generate', methods=['GET'])
 def generate_lotto():
@@ -512,8 +759,213 @@ def generate_lotto():
     return jsonify({'numbers': numbers, 'bonus': bonus}), 200
 
 
+@app.route('/api/lotto/history', methods=['GET'])
+def lotto_history():
+    """회차별 로또 과거 결과 조회
+
+    파라미터:
+      - round (int): 특정 회차 조회
+      - start, end (int): 범위 조회 (start <= end)
+
+    외부 dhlottery API에서 가져오며 로컬 캐시에 저장합니다.
+    """
+    ensure_data_files()
+    cache = load_lotto_history()
+
+    drw = request.args.get('round', type=int)
+    start = request.args.get('start', type=int)
+    end = request.args.get('end', type=int)
+
+    results = {}
+
+    if drw:
+        key = str(drw)
+        if key in cache:
+            return jsonify({'draw': cache[key]}), 200
+        data = fetch_lotto_round(drw)
+        if data:
+            cache[key] = data
+            save_lotto_history(cache)
+            return jsonify({'draw': data}), 200
+        return jsonify({'error': '해당 회차 데이터를 가져오지 못했습니다.'}), 404
+
+    if start and end:
+        if start > end:
+            return jsonify({'error': 'start는 end보다 작거나 같아야 합니다.'}), 400
+        for n in range(start, end+1):
+            key = str(n)
+            if key in cache:
+                results[key] = cache[key]
+                continue
+            data = fetch_lotto_round(n)
+            if data:
+                cache[key] = data
+                results[key] = data
+        save_lotto_history(cache)
+        return jsonify({'draws': results}), 200
+
+    # 기본: 캐시에 있는 최신 10회 반환
+    all_keys = sorted([int(k) for k in cache.keys()], reverse=True)
+    latest = all_keys[:10]
+    for k in latest:
+        results[str(k)] = cache.get(str(k))
+    return jsonify({'draws': results}), 200
+
+
+# --------- External sports fetcher & scheduler ---------
+def parse_sports_html(league, html_text):
+    """간단한 HTML 파서: 표(tr/td)를 찾아 날짜/시간/홈/어웨이/score/status를 추출한다.
+    매우 단순한 규칙을 사용하므로 사이트 구조 변경 시 조정 필요.
+    """
+    soup = BeautifulSoup(html_text, 'html.parser')
+    results = []
+
+    # 우선 JSON 형태 데이터가 있는지 확인
+    # fallback: 테이블 파싱
+    tables = soup.find_all('table')
+    for table in tables:
+        for tr in table.find_all('tr'):
+            tds = [td.get_text(strip=True) for td in tr.find_all('td')]
+            if len(tds) >= 4:
+                entry = {
+                    'date': tds[0] if len(tds) > 0 else '',
+                    'time': tds[1] if len(tds) > 1 else '',
+                    'home': tds[2] if len(tds) > 2 else '',
+                    'away': tds[3] if len(tds) > 3 else '',
+                }
+                if len(tds) > 4: entry['score'] = tds[4]
+                if len(tds) > 5: entry['status'] = tds[5]
+                results.append(entry)
+
+    # 보정: 중복/빈값 제거, 최대 30개
+    cleaned = []
+    seen = set()
+    for r in results:
+        key = (r.get('date',''), r.get('time',''), r.get('home',''), r.get('away',''))
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(r)
+        if len(cleaned) >= 30:
+            break
+
+    return cleaned
+
+
+def fetch_and_update_schedules(sources=None):
+    """외부 소스(또는 기본 소스들)를 순회하며 스포츠 일정을 가져와 캐시를 업데이트한다.
+    sources: dict(league->url)
+    """
+    global SPORT_SCHEDULES, _schedules_lock
+    try:
+        if _schedules_lock is None:
+            import threading as _th
+            _schedules_lock = _th.Lock()
+
+        cfg = {}
+        # 기본 소스: Naver 검색 결과 (간단 예시)
+        default_sources = {
+            'kleague': os.environ.get('SPORTS_URL_KLEAGUE', 'https://sports.news.naver.com/kfootball/schedule/index'),
+            'vleague': os.environ.get('SPORTS_URL_VLEAGUE', 'https://sports.news.naver.com/volleyball/schedule/index'),
+            'kbo': os.environ.get('SPORTS_URL_KBO', 'https://sports.news.naver.com/kbaseball/schedule/index')
+        }
+
+        cfg.update(default_sources)
+        if isinstance(sources, dict):
+            cfg.update(sources)
+
+        updated = {}
+        for league, url in cfg.items():
+            try:
+                resp = requests.get(url, timeout=10)
+                if resp.status_code == 200:
+                    # try JSON first
+                    try:
+                        j = resp.json()
+                        # heuristic: list of matches
+                        if isinstance(j, dict) and 'matches' in j:
+                            updated[league] = j['matches']
+                        elif isinstance(j, list):
+                            updated[league] = j
+                        else:
+                            # fallback to HTML parse
+                            updated[league] = parse_sports_html(league, resp.text)
+                    except Exception:
+                        updated[league] = parse_sports_html(league, resp.text)
+                else:
+                    app.logger.warning(f"Failed to fetch {league} from {url}: status {resp.status_code}")
+            except Exception as e:
+                app.logger.warning(f"Error fetching {league} from {url}: {e}")
+
+        # merge: only replace leagues we successfully fetched
+        if updated:
+            with _schedules_lock:
+                cache = load_sports_cache()
+                for k, v in updated.items():
+                    cache[k] = v
+                save_sports_cache(cache)
+                SPORT_SCHEDULES = cache
+                app.logger.info('Sports schedules updated from external sources.')
+        return True
+    except Exception as e:
+        app.logger.exception('Failed to fetch and update schedules: %s', e)
+        return False
+
+
+@app.route('/api/sports/refresh', methods=['POST'])
+def refresh_sports():
+    """수동으로 외부 스포츠 일정을 갱신합니다."""
+    ok = fetch_and_update_schedules()
+    if ok:
+        return jsonify({'message': '갱신 완료'}), 200
+    return jsonify({'error': '갱신 실패'}), 500
+
+
+def start_schedules_updater(interval_seconds=60):
+    """데몬 스레드로 주기적 갱신을 수행합니다."""
+    import threading, time
+
+    def loop():
+        while True:
+            try:
+                fetch_and_update_schedules()
+            except Exception:
+                app.logger.exception('Updater loop error')
+            time.sleep(interval_seconds)
+
+    t = threading.Thread(target=loop, daemon=True)
+    t.start()
+
+
+# [API] 방문자 수 기록 및 기본 통계
+@app.route('/api/visit', methods=['POST'])
+def visit():
+    """페이지 방문 시 호출하여 방문자 수를 1 증가시킨다"""
+    ensure_data_files()
+    visits = load_json(VISITS_FILE, {'count': 0})
+    visits['count'] = int(visits.get('count', 0)) + 1
+    save_json(VISITS_FILE, visits)
+    return jsonify({'count': visits['count']}), 200
+
+
+@app.route('/api/stats', methods=['GET'])
+def stats():
+    """기본 통계: 방문자, 회원수, 게시글수 반환"""
+    ensure_data_files()
+    visits = load_json(VISITS_FILE, {'count': 0})
+    users = load_json(USERS_FILE, {})
+    posts = load_json(POSTS_FILE, [])
+    return jsonify({'visits': int(visits.get('count', 0)), 'users': len(users), 'posts': len(posts)}), 200
+
+
 # ==========================================
 # 5. 실행 실행
 # ==========================================
 if __name__ == '__main__':
+    # 시작 시 외부 스포츠 일정 자동 갱신 시작
+    try:
+        interval = int(os.environ.get('SPORTS_REFRESH_INTERVAL', '60'))
+    except Exception:
+        interval = 60
+    start_schedules_updater(interval_seconds=interval)
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,6 +1,7 @@
 let canvas, ctx;
 let balls = [];
 let drawCount = 0;
+let CANVAS_W = 420, CANVAS_H = 420;
 
 const MAX_LINES = 5;
 
@@ -11,18 +12,19 @@ class Ball {
     constructor(num) {
         this.num = num;
         this.radius = 16;
-        this.x = Math.random() * (420 - this.radius * 2) + this.radius;
-        this.y = Math.random() * (420 - this.radius * 2) + this.radius;
-        this.vx = (Math.random() - 0.5) * 4;
-        this.vy = (Math.random() - 0.5) * 4;
+        this.x = Math.random() * (CANVAS_W - this.radius * 2) + this.radius;
+        this.y = Math.random() * (CANVAS_H - this.radius * 2) + this.radius;
+        // 더 넓게 흩날리도록 속도 범위 확대
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
     }
 
     move() {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < this.radius || this.x > 420 - this.radius) this.vx *= -1;
-        if (this.y < this.radius || this.y > 420 - this.radius) this.vy *= -1;
+        if (this.x < this.radius || this.x > CANVAS_W - this.radius) this.vx *= -1;
+        if (this.y < this.radius || this.y > CANVAS_H - this.radius) this.vy *= -1;
     }
 
     draw() {
@@ -253,6 +255,82 @@ async function loadKBO() {
 }
 
 /* =========================
+   사이트 통계 로드 (방문자 증가 포함)
+========================= */
+async function loadStats() {
+    try {
+        const last = localStorage.getItem('visitedAt');
+        const now = Date.now();
+        const DAY = 24 * 60 * 60 * 1000;
+
+        if (!last || now - Number(last) > DAY) {
+            await fetch('/api/visit', { method: 'POST' });
+            localStorage.setItem('visitedAt', String(now));
+        }
+
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+
+        const v = document.getElementById('statsVisits');
+        const u = document.getElementById('statsUsers');
+        const p = document.getElementById('statsPosts');
+
+        if (v) v.innerText = data.visits ?? '-';
+        if (u) u.innerText = data.users ?? '-';
+        if (p) p.innerText = data.posts ?? '-';
+    } catch (err) {
+        console.log('통계 로드 실패', err);
+    }
+}
+
+/* =========================
+   스포츠 일정 렌더링
+========================= */
+async function loadSportsSchedules() {
+    try {
+        const res = await fetch('/api/sports/schedule');
+        const data = await res.json();
+        const panel = document.getElementById('sportsPanel');
+        if (!panel) return;
+
+        panel.innerHTML = '';
+        Object.entries(data).forEach(([league, games]) => {
+            const card = document.createElement('div');
+            card.className = 'kbo-card';
+            const title = document.createElement('h3');
+            title.style.marginBottom = '8px';
+            title.style.color = '#fff';
+            title.innerText = league.toUpperCase();
+            card.appendChild(title);
+
+            const tbl = document.createElement('table');
+            tbl.className = 'schedule-table';
+            const thead = document.createElement('thead');
+            thead.innerHTML = `<tr><th>날짜</th><th>시간</th><th>홈</th><th>원정</th><th>스코어</th><th>상태</th></tr>`;
+            tbl.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            (games || []).forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${g.date || '-'}</td>
+                    <td>${g.time || '-'}</td>
+                    <td>${g.home || '-'}</td>
+                    <td>${g.away || '-'}</td>
+                    <td>${g.score || '-'}</td>
+                    <td>${g.status || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            tbl.appendChild(tbody);
+            card.appendChild(tbl);
+            panel.appendChild(card);
+        });
+    } catch (err) {
+        console.log('스포츠 일정 로드 실패', err);
+    }
+}
+
+/* =========================
    실행
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
@@ -260,13 +338,99 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (canvas) {
         ctx = canvas.getContext("2d");
-        canvas.width = 420;
-        canvas.height = 420;
 
-        init();
+        function resizeCanvas() {
+            // Prefer parent element dimensions; fall back to bounding rect or defaults
+            const parent = canvas.parentElement || document.body;
+            const rectW = parent.clientWidth || canvas.getBoundingClientRect().width || 420;
+            const rectH = parent.clientHeight || canvas.getBoundingClientRect().height || rectW;
+            canvas.width = rectW;
+            canvas.height = rectH;
+            CANVAS_W = canvas.width;
+            CANVAS_H = canvas.height;
+            init();
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', () => { resizeCanvas(); });
+
         animate();
+        const fallback = document.getElementById('machineFallback');
+        if (fallback) fallback.style.display = 'none';
     }
 
     loadKBO();
     setInterval(loadKBO, 10000);
+    // 방문자/통계 로드
+    loadStats();
+    setInterval(loadStats, 30000);
+
+    // 스포츠 일정 로드
+    loadSportsSchedules();
+    setInterval(loadSportsSchedules, 30000);
+
+    // 로또 회차별 이력 로드 (최신)
+    if (typeof loadLottoHistory === 'function') {
+        loadLottoHistory();
+    }
 });
+
+
+/* =========================
+   로또 회차별 결과 표시
+========================= */
+async function loadLottoHistory() {
+    try {
+        const res = await fetch('/api/lotto/history');
+        const j = await res.json();
+        const container = document.getElementById('lottoHistory');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const draws = j.draws || {};
+        if (Object.keys(draws).length === 0) {
+            container.innerText = '회차 데이터가 없습니다.';
+            return;
+        }
+
+        Object.keys(draws).sort((a,b)=>Number(b)-Number(a)).forEach(key => {
+            const d = draws[key];
+            const div = document.createElement('div');
+            div.style.padding = '8px 6px';
+            div.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+            div.innerHTML = `<strong>${key}회 (${d.drwNoDate || ''})</strong> `;
+            const nums = (d.numbers || []).map(n=>`<span class="ball ${getColorClass(n)}" style="display:inline-block;margin-left:6px;">${n}</span>`).join('');
+            div.innerHTML += nums + (d.bonus ? `<span style="margin-left:8px; color:var(--muted);">보너스: ${d.bonus}</span>` : '');
+            container.appendChild(div);
+        });
+    } catch (err) {
+        console.log('로또 이력 로드 실패', err);
+    }
+}
+
+async function fetchLottoRoundUI() {
+    const v = document.getElementById('drwNoInput').value;
+    if (!v) return loadLottoHistory();
+    try {
+        const res = await fetch('/api/lotto/history?round=' + encodeURIComponent(v));
+        if (!res.ok) {
+            alert('회차 데이터를 불러올 수 없습니다.');
+            return;
+        }
+        const j = await res.json();
+        const d = j.draw;
+        const container = document.getElementById('lottoHistory');
+        container.innerHTML = '';
+        if (!d) {
+            container.innerText = '해당 회차 데이터 없음';
+            return;
+        }
+        const div = document.createElement('div');
+        div.innerHTML = `<h4>${d.drwNo}회 (${d.drwNoDate || ''})</h4>`;
+        const nums = (d.numbers || []).map(n=>`<span class="ball ${getColorClass(n)}" style="display:inline-block;margin-right:6px">${n}</span>`).join('');
+        div.innerHTML += `<div>${nums} <span style="margin-left:8px; color:var(--muted);">보너스: ${d.bonus}</span></div>`;
+        container.appendChild(div);
+    } catch (err) {
+        console.log('fetchLottoRoundUI error', err);
+    }
+}
