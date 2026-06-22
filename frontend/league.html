@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경기 일정</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="league" data-league="{{ league }}">
+    <div class="container full-screen">
+        <header>
+            <h1 id="leagueTitle">경기 일정</h1>
+            <p id="leagueSubtitle">선택한 리그의 최신 일정을 확인하세요.</p>
+            <nav class="page-nav">
+                <a class="nav-link" href="/">메인</a>
+                <a class="nav-link" href="/kleague">K리그</a>
+                <a class="nav-link" href="/vleague">V리그</a>
+                <a class="nav-link" href="/kbo">KBO</a>
+                <a class="nav-link" href="/board">게시판</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="schedule-section big-section">
+                <div class="schedule-card">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>홈</th>
+                                <th>원정</th>
+                                <th>시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleTable"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2026 한국 스포츠 일정</p>
+        </footer>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

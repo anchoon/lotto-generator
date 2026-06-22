@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>익명 게시판 - LIVE LOTTO DRAW</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E72 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1em;
+            opacity: 0.95;
+        }
+
+        nav.menu {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        nav.menu a {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        nav.menu a:hover, nav.menu a.active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        main {
+            margin-bottom: 30px;
+        }
+
+        section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .write-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #FF6B6B;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .message.error {
+            background: #ffe0e0;
+            color: #d32f2f;
+            border-left: 4px solid #d32f2f;
+        }
+
+        .message.success {
+            background: #e0f2e0;
+            color: #1b5e20;
+            border-left: 4px solid #1b5e20;
+        }
+
+        .post-list-section {
+            background: white;
+        }
+
+        .post-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .post-item:hover {
+            background: #f9f9f9;
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .post-author {
+            color: #667eea;
+            font-weight: 600;
+            margin: 0 15px;
+        }
+
+        .post-date {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .post-body {
+            color: #666;
+            margin: 10px 0;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-delete:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+
+        .pagination a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .pagination .active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination .disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .no-posts {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 1.1em;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            font-size: 0.9em;
+            padding: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-modal {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-confirm {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            section {
+                padding: 20px;
+            }
+
+            .post-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .post-author {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💬 익명 게시판</h1>
+            <p>자유롭게 의견을 나누는 스포츠 커뮤니티</p>
+            <nav class="menu">
+                <a href="/">🎰 로또</a>
+                <a href="/world-cup">🌍 월드컵</a>
+                <a href="/kbo">⚾ KBO</a>
+                <a href="/board" class="active">💬 게시판</a>
+            </nav>
+        </header>
+
+        <main>
+            <!-- 게시글 작성 섹션 -->
+            <section class="write-section">
+                <h2>✍️ 게시글 작성</h2>
+                <form id="postForm">
+                    <div class="form-group">
+                        <label for="postTitle">제목</label>
+                        <input type="text" id="postTitle" placeholder="제목을 입력하세요" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postBody">내용</label>
+                        <textarea id="postBody" placeholder="내용을 입력하세요" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postPassword">비밀번호 (게시글 삭제 시 필요)</label>
+                        <input type="password" id="postPassword" placeholder="4자 이상의 숫자/문자 조합" minlength="4" required>
+                    </div>
+
+                    <button type="submit">게시하기</button>
+                    <div id="postMessage" class="message" style="display: none;"></div>
+                </form>
+            </section>
+
+            <!-- 게시물 목록 섹션 -->
+            <section class="post-list-section">
+                <h2>📋 게시물 목록 (최신순)</h2>
+                <div id="postList"></div>
+                <div id="pagination" class="pagination"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2026 LIVE LOTTO DRAW | 익명 게시판</p>
+        </footer>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">게시글 삭제</div>
+            <p>이 게시글을 삭제하시겠습니까?</p>
+            <p style="color: #999; font-size: 0.9em;">삭제용 비밀번호를 입력하세요:</p>
+            <input type="password" id="deletePassword" placeholder="비밀번호 입력" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; margin: 10px 0;">
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeDeleteModal()">취소</button>
+                <button class="btn-modal btn-confirm" onclick="confirmDelete()">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const postsPerPage = 20;
+        let deletePostId = null;
+
+        // 페이지 로드 시 게시물 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPosts(1);
+        });
+
+        // 게시글 작성
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('postTitle').value.trim();
+            const body = document.getElementById('postBody').value.trim();
+            const password = document.getElementById('postPassword').value;
+
+            if (!title || !body || !password) {
+                showMessage('모든 필드를 입력하세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, body, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✓ 게시글이 등록되었습니다!', 'success');
+                    document.getElementById('postForm').reset();
+                    setTimeout(() => {
+                        loadPosts(1);
+                    }, 1000);
+                } else {
+                    showMessage(data.error || '게시글 등록에 실패했습니다.', 'error');
+                }
+            } catch (error) {
+                showMessage('서버 연결에 실패했습니다.', 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        // 게시물 로드
+        async function loadPosts(page) {
+            try {
+                const response = await fetch(`/api/posts?page=${page}&limit=${postsPerPage}`);
+                const data = await response.json();
+
+                currentPage = page;
+                displayPosts(data.posts);
+                displayPagination(data.current_page, data.total_pages);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('postList').innerHTML = '<div class="no-posts">게시물을 불러올 수 없습니다.</div>';
+            }
+        }
+
+        // 게시물 표시
+        function displayPosts(posts) {
+            const postList = document.getElementById('postList');
+            
+            if (posts.length === 0) {
+                postList.innerHTML = '<div class="no-posts">게시물이 없습니다. 첫 번째 글을 작성해보세요!</div>';
+                return;
+            }
+
+            postList.innerHTML = posts.map(post => `
+                <div class="post-item">
+                    <div class="post-header">
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-author">${post.author}</div>
+                        <div class="post-date">${post.date}</div>
+                    </div>
+                    <div class="post-body">${escapeHtml(post.body)}</div>
+                    <div class="post-actions">
+                        <button class="btn-delete" onclick="openDeleteModal(${post.id})">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 페이징 표시
+        function displayPagination(currentPage, totalPages) {
+            const pagination = document.getElementById('pagination');
+            let html = '';
+
+            // 이전 버튼
+            if (currentPage > 1) {
+                html += `<a onclick="loadPosts(${currentPage - 1})">← 이전</a>`;
+            } else {
+                html += `<span class="disabled">← 이전</span>`;
+            }
+
+            // 페이지 번호
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                html += `<a onclick="loadPosts(1)">1</a>`;
+                if (startPage > 2) {
+                    html += `<span>...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    html += `<span class="active">${i}</span>`;
+                } else {
+                    html += `<a onclick="loadPosts(${i})">${i}</a>`;
+                }
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span>...</span>`;
+                }
+                html += `<a onclick="loadPosts(${totalPages})">${totalPages}</a>`;
+            }
+
+            // 다음 버튼
+            if (currentPage < totalPages) {
+                html += `<a onclick="loadPosts(${currentPage + 1})">다음 →</a>`;
+            } else {
+                html += `<span class="disabled">다음 →</span>`;
+            }
+
+            pagination.innerHTML = html;
+        }
+
+        // 메시지 표시
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('postMessage');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // 삭제 모달 열기
+        function openDeleteModal(postId) {
+            deletePostId = postId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        // 삭제 모달 닫기
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            document.getElementById('deletePassword').value = '';
+            deletePostId = null;
+        }
+
+        // 삭제 확인
+        async function confirmDelete() {
+            const password = document.getElementById('deletePassword').value;
+
+            if (!password) {
+                alert('비밀번호를 입력하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/posts/${deletePostId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('게시글이 삭제되었습니다.');
+                    closeDeleteModal();
+                    loadPosts(currentPage);
+                } else {
+                    alert(data.error || '삭제에 실패했습니다.');
+                }
+            } catch (error) {
+                alert('서버 연결에 실패했습니다.');
+                console.error('Error:', error);
+            }
+        }
+
+        // HTML 이스케이프
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
+        }
+    </script>
+</body>
+</html>

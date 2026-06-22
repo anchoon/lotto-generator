@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KBO - LIVE LOTTO DRAW</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --dark: #2D3436;
+            --light: #F5F6FA;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E72 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1em;
+            opacity: 0.95;
+        }
+
+        nav.menu {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        nav.menu a {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        nav.menu a:hover, nav.menu a.active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        main {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .schedule-section {
+            width: 100%;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1em;
+        }
+
+        .schedule-table thead {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .schedule-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .schedule-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .schedule-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .schedule-table tbody tr:hover {
+            background-color: var(--light);
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .score {
+            background: linear-gradient(135deg, var(--secondary), #45B7AA);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status.completed {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status.inprogress {
+            background: #FCE8D4;
+            color: #856404;
+        }
+
+        .status.scheduled {
+            background: #D1ECF1;
+            color: #0c5460;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .schedule-table {
+                font-size: 0.85em;
+            }
+
+            .schedule-table th, .schedule-table td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>⚾ KBO 리그</h1>
+        <p>2026 시즌 경기 일정 및 결과</p>
+        <nav class="menu">
+            <a href="/">로또</a>
+            <a href="/world-cup">🌍 월드컵</a>
+            <a href="/kbo" class="active">KBO</a>
+            <a href="/vleague">V리그</a>
+            <a href="/kleague">K리그</a>
+            <a href="/board">게시판</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="schedule-section">
+            <div id="loadingDiv" class="loading">로딩 중...</div>
+            <table class="schedule-table" id="scheduleTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>홈팀</th>
+                        <th>원정팀</th>
+                        <th>스코어</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2026 LIVE LOTTO DRAW | KBO 실시간 정보</p>
+    </footer>
+</div>
+
+<script>
+    async function loadKBOData() {
+        try {
+            const response = await fetch('/api/sports/schedule?league=kbo');
+            const games = await response.json();
+
+            const tbody = document.getElementById('tableBody');
+            const table = document.getElementById('scheduleTable');
+            const loadingDiv = document.getElementById('loadingDiv');
+
+            if (!Array.isArray(games) || games.length === 0) {
+                loadingDiv.innerHTML = '<div class="error">경기 정보가 없습니다.</div>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            games.forEach(game => {
+                const row = document.createElement('tr');
+                const statusClass = game.status === '종료' ? 'completed' : 
+                                   game.status.includes('회') ? 'inprogress' : 'scheduled';
+                
+                row.innerHTML = `
+                    <td>${game.date}</td>
+                    <td>${game.time}</td>
+                    <td class="team-name">${game.home}</td>
+                    <td class="team-name">${game.away}</td>
+                    <td><div class="score">${game.score || '-'}</div></td>
+                    <td><span class="status ${statusClass}">${game.status}</span></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+
+            loadingDiv.style.display = 'none';
+            table.style.display = 'table';
+
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('loadingDiv').innerHTML = 
+                '<div class="error">데이터를 불러올 수 없습니다.</div>';
+        }
+    }
+
+    // 페이지 로드 시 데이터 가져오기
+    document.addEventListener('DOMContentLoaded', loadKBOData);
+
+    // 10초마다 자동 업데이트
+    setInterval(loadKBOData, 10000);
+</script>
+
+</body>
+</html>

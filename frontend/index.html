@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LIVE LOTTO DRAW</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- ⭐ 핵심: defer 추가 (DOM 이후 실행) -->
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>🎥 LIVE LOTTO DRAW</h1>
+        <p>실시간 공 애니메이션 로또 시스템</p>
+    </header>
+
+    <nav class="menu">
+        <a href="/">로또</a>
+        <a href="/world-cup">🌍 월드컵</a>
+        <a href="/kbo">KBO</a>
+        <a href="/vleague">V리그</a>
+        <a href="/kleague">K리그</a>
+        <a href="/board">게시판</a>
+    </nav>
+
+    <div class="top-controls">
+        <button onclick="startDraw()">1줄 추첨</button>
+        <button onclick="fastFive()">5줄 즉시</button>
+        <button onclick="resetDraw()">초기화</button>
+    </div>
+
+    <main>
+
+        <section class="machine-wrap">
+            <div class="machine">
+                <canvas id="canvas"></canvas>
+                <div id="tube"></div>
+            </div>
+        </section>
+
+        <section id="result"></section>
+
+        <section style="text-align: center; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+            <p style="color: white; margin-bottom: 15px; font-weight: 600;">🌐 더 많은 스포츠 정보를 보려면</p>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <a href="https://sports.naver.com/wc2026" target="_blank" style="background: #00C73C; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 월드컵</a>
+                <a href="https://sports.naver.com/kbo/schedule" target="_blank" style="background: #00C73C; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 KBO</a>
+                <a href="https://sports.naver.com" target="_blank" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 스포츠</a>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

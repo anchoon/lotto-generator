@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROTO 통계</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="roto">
+    <div class="container">
+        <header>
+            <h1>📊 ROTO 통계</h1>
+            <p>최근 회차 데이터를 기반으로 자주/덜 나온 번호를 확인하세요.</p>
+        </header>
+
+        <nav class="page-nav">
+            <a href="/" class="nav-link">메인</a>
+            <a href="/toto" class="nav-link">TOTO</a>
+        </nav>
+
+        <main>
+            <section class="analytics-section">
+                <h2>번호 통계</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <h3>자주 나온 번호</h3>
+                        <div id="mostCommon" class="number-list"></div>
+                    </div>
+                    <div class="stat-box">
+                        <h3>덜 나온 번호</h3>
+                        <div id="leastCommon" class="number-list"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2026 로또 생성기 | ROTO 페이지</p>
+        </footer>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

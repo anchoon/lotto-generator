@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTO 로또</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="toto">
+    <div class="container full-screen">
+        <header>
+            <h1>🎯 TOTO 로또</h1>
+            <p>공이 흩날리며 하나씩 번호가 채워지는 애니메이션을 경험하세요.</p>
+            <nav class="page-nav">
+                <a href="/" class="nav-link">메인</a>
+                <a href="/lotto" class="nav-link">LOTTO</a>
+                <a href="/board" class="nav-link">게시판</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="generator-section big-section">
+                <div class="animation-zone" id="animationZone"></div>
+                <div class="numbers-display" id="numbersDisplay">
+                    <div class="numbers">
+                        <span class="number">-</span>
+                        <span class="number">-</span>
+                        <span class="number">-</span>
+                        <span class="number">-</span>
+                        <span class="number">-</span>
+                        <span class="number">-</span>
+                    </div>
+                    <div class="bonus">
+                        <span class="label">보너스</span>
+                        <span class="number" id="bonusNumber">-</span>
+                    </div>
+                </div>
+                <button class="btn-generate" id="generateButton" type="button">번호 생성</button>
+            </section>
+
+            <section class="history-section big-section">
+                <h2>최근 당첨번호</h2>
+                <div id="pastWinningList" class="winning-list"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2026 로또 생성기 | TOTO 페이지</p>
+        </footer>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

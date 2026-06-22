@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 FIFA 월드컵</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --dark: #2D3436;
+            --light: #F5F6FA;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E72 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        nav.menu {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        nav.menu a {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        nav.menu a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .info-card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-card p {
+            color: var(--dark);
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .group-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .group-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .group-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            padding: 15px;
+        }
+
+        .standings-table th {
+            background: var(--light);
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid #ddd;
+        }
+
+        .standings-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .standings-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .standings-table tbody tr:hover {
+            background-color: var(--light);
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .team-row.korea {
+            background-color: #FFFACD;
+            font-weight: bold;
+        }
+
+        .matches-container {
+            display: grid;
+            gap: 15px;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .match-date {
+            background: var(--light);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: 600;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .match-info {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .team-name-match {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .vs {
+            color: #999;
+            padding: 0 10px;
+            font-weight: bold;
+        }
+
+        .match-result {
+            background: linear-gradient(135deg, var(--secondary), #45B7AA);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.3em;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .match-status {
+            font-size: 0.8em;
+            color: #666;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: var(--light);
+        }
+
+        .match-status.completed {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .match-status.upcoming {
+            background: #FCE8D4;
+            color: #856404;
+        }
+
+        .korea-highlight {
+            border-left: 4px solid var(--primary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .group-container {
+                grid-template-columns: 1fr;
+            }
+
+            .match-info {
+                flex-direction: column;
+            }
+
+            .tabs {
+                gap: 5px;
+            }
+
+            .tab-btn {
+                min-width: 100px;
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: white;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ 2026 FIFA 월드컵</h1>
+            <p>실시간 정보 및 순위 조회</p>
+        </header>
+
+        <nav class="menu">
+            <a href="/">🎰 로또</a>
+            <a href="/world-cup">🌍 월드컵</a>
+            <a href="/kbo">⚾ KBO</a>
+            <a href="/vleague">🏐 V리그</a>
+            <a href="/kleague">⚽ K리그</a>
+            <a href="/board">💬 게시판</a>
+        </nav>
+
+        <div class="info-grid" id="infoGrid">
+            <div class="info-card">
+                <h3>개최국</h3>
+                <p id="hosts">로딩중...</p>
+            </div>
+            <div class="info-card">
+                <h3>기간</h3>
+                <p id="period">로딩중...</p>
+            </div>
+            <div class="info-card">
+                <h3>참가팀</h3>
+                <p id="teams">48팀</p>
+            </div>
+            <div class="info-card">
+                <h3>상태</h3>
+                <p id="status">로딩중...</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <a href="https://sports.naver.com/wc2026" target="_blank" style="background: #00C73C; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 스포츠 ⚽ 월드컵</a>
+            <a href="https://sports.naver.com" target="_blank" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">네이버 스포츠 뉴스</a>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('standings')">조별 순위</button>
+            <button class="tab-btn" onclick="switchTab('matches')">경기 결과</button>
+            <button class="tab-btn" onclick="switchTab('korea')">한국</button>
+        </div>
+
+        <div id="standings" class="tab-content active">
+            <div id="standingsLoading" class="loading">로딩중...</div>
+            <div id="standingsContainer" class="group-container"></div>
+        </div>
+
+        <div id="matches" class="tab-content">
+            <div id="matchesLoading" class="loading">로딩중...</div>
+            <div id="matchesContainer" class="matches-container"></div>
+        </div>
+
+        <div id="korea" class="tab-content">
+            <div id="koreaContent"></div>
+        </div>
+
+        <footer>
+            <p>© 2026 FIFA World Cup Information System | 실시간 업데이트</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = '/api/world-cup';
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            loadWorldCupInfo();
+            loadStandings();
+            loadMatches();
+        });
+
+        // 월드컵 기본 정보 로드
+        async function loadWorldCupInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/info`);
+                const data = await response.json();
+                
+                document.getElementById('hosts').textContent = data.hosts.join(', ');
+                document.getElementById('period').textContent = 
+                    `${data.start_date} ~ ${data.end_date}`;
+                document.getElementById('status').textContent = 
+                    data.status === '진행중' ? '🔴 진행중' : '대기중';
+            } catch (error) {
+                console.error('기본정보 로딩 실패:', error);
+            }
+        }
+
+        // 조별 순위 로드
+        async function loadStandings() {
+            try {
+                const response = await fetch(`${API_BASE}/standings`);
+                const groups = await response.json();
+                
+                const container = document.getElementById('standingsContainer');
+                container.innerHTML = '';
+
+                for (const [groupName, teams] of Object.entries(groups)) {
+                    const groupCard = document.createElement('div');
+                    groupCard.className = 'group-card';
+                    
+                    let table = `
+                        <div class="group-header">그룹 ${groupName}</div>
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>팀</th>
+                                    <th>경</th>
+                                    <th>승</th>
+                                    <th>무</th>
+                                    <th>패</th>
+                                    <th>득</th>
+                                    <th>실</th>
+                                    <th>점</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    teams.forEach((team, idx) => {
+                        const isKorea = team.name === '한국' ? 'korea' : '';
+                        table += `
+                            <tr class="team-row ${isKorea}">
+                                <td class="team-name">${team.flag} ${team.name}</td>
+                                <td>${team.played}</td>
+                                <td>${team.wins}</td>
+                                <td>${team.draws}</td>
+                                <td>${team.losses}</td>
+                                <td>${team.gf}</td>
+                                <td>${team.ga}</td>
+                                <td style="font-weight: bold; color: var(--primary)">${team.points}</td>
+                            </tr>
+                        `;
+                    });
+
+                    table += `
+                            </tbody>
+                        </table>
+                    `;
+
+                    groupCard.innerHTML = table;
+                    container.appendChild(groupCard);
+                }
+
+                document.getElementById('standingsLoading').style.display = 'none';
+            } catch (error) {
+                console.error('순위 로딩 실패:', error);
+                document.getElementById('standingsLoading').innerHTML = 
+                    '<div class="error">순위 정보를 불러올 수 없습니다.</div>';
+            }
+        }
+
+        // 경기 결과/예정 로드
+        async function loadMatches() {
+            try {
+                const response = await fetch(`${API_BASE}/matches`);
+                const data = await response.json();
+                
+                const container = document.getElementById('matchesContainer');
+                container.innerHTML = '';
+
+                // 완료된 경기와 예정된 경기 분리
+                const completed = data.matches.filter(m => m.status === '종료');
+                const upcoming = data.matches.filter(m => m.status === '예정');
+
+                if (completed.length > 0) {
+                    container.innerHTML += '<h3 style="color: white; margin-top: 0;">완료된 경기</h3>';
+                    completed.forEach(match => {
+                        container.appendChild(createMatchCard(match));
+                    });
+                }
+
+                if (upcoming.length > 0) {
+                    container.innerHTML += '<h3 style="color: white; margin-top: 20px;">예정된 경기</h3>';
+                    upcoming.forEach(match => {
+                        container.appendChild(createMatchCard(match));
+                    });
+                }
+
+                document.getElementById('matchesLoading').style.display = 'none';
+            } catch (error) {
+                console.error('경기 정보 로딩 실패:', error);
+                document.getElementById('matchesLoading').innerHTML = 
+                    '<div class="error">경기 정보를 불러올 수 없습니다.</div>';
+            }
+        }
+
+        // 경기 카드 생성
+        function createMatchCard(match) {
+            const card = document.createElement('div');
+            const isKoreaMatch = match.home === '한국' || match.away === '한국' ? 'korea-highlight' : '';
+            card.className = `match-card ${isKoreaMatch}`;
+            
+            const statusClass = match.status === '종료' ? 'completed' : 'upcoming';
+            
+            card.innerHTML = `
+                <div class="match-date">
+                    ${match.date}<br>${match.time}
+                </div>
+                <div class="match-info">
+                    <div class="team">
+                        <div class="team-name-match">🇫🇮 ${match.home}</div>
+                    </div>
+                    <div class="vs">vs</div>
+                    <div class="team">
+                        <div class="team-name-match">🇫🇮 ${match.away}</div>
+                    </div>
+                </div>
+                <div class="match-result">
+                    ${match.result}
+                </div>
+                <div class="match-status ${statusClass}">
+                    ${match.status}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // 한국 팀 정보
+        async function loadKoreaInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/team/한국`);
+                const data = await response.json();
+                
+                const content = document.getElementById('koreaContent');
+                const team = data.team;
+                
+                content.innerHTML = `
+                    <div class="group-card" style="background: #FFFACD;">
+                        <div class="group-header" style="background: linear-gradient(135deg, #FFD700, #FFA500);">
+                            🇰🇷 한국 팀 정보 - 그룹 ${data.group}
+                        </div>
+                        <div style="padding: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div class="info-card">
+                                    <h3>경기수</h3>
+                                    <p>${team.played}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>승리</h3>
+                                    <p>${team.wins}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>무승부</h3>
+                                    <p>${team.draws}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>패배</h3>
+                                    <p>${team.losses}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>득점</h3>
+                                    <p>${team.gf}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>실점</h3>
+                                    <p>${team.ga}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>포인트</h3>
+                                    <p style="color: var(--primary); font-size: 2em;">${team.points}</p>
+                                </div>
+                                <div class="info-card">
+                                    <h3>순위</h3>
+                                    <p style="font-size: 2em; color: #FF6B6B;">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('한국 정보 로딩 실패:', error);
+                document.getElementById('koreaContent').innerHTML = 
+                    '<div class="error">한국 팀 정보를 불러올 수 없습니다.</div>';
+            }
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            // 모든 탭 숨기기
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 선택된 탭 표시
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // 한국 탭일 때 정보 로드
+            if (tabName === 'korea') {
+                loadKoreaInfo();
+            }
+        }
+    </script>
+</body>
+</html>
